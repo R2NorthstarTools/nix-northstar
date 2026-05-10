@@ -16,5 +16,7 @@
     in
     {
       formatter = eachSystem (pkgs: pkgs.nixfmt-tree);
+
+      packages = eachSystem (pkgs: pkgs.callPackage ./pkgs { });
     };
 }
