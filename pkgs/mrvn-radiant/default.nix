@@ -1,64 +1,63 @@
 {
-  pkgs,
   lib,
+  fetchgit,
+  makeDesktopItem,
+  # libs
+  pcre,
+  libsysprof-capture,
+  qt6,
+  libGL,
+  mesa,
+  wayland,
+  glib,
+  libxml2,
+  zlib,
+  libpng,
+  libjpeg,
+  libxkbcommon,
+  libx11,
+  libxext,
+  libxrender,
+  libxi,
+  libxcursor,
+  libxcb,
+  # stuff to compile mrvn
+  makeWrapper,
+  copyDesktopItems,
+  cmake,
+  pkg-config,
+  keepBuildTree,
+  stdenv,
   ...
 }:
-let
-  nixpkgs-source = pkgs.fetchFromGitHub {
-    owner = "NixOS";
-    repo = "nixpkgs";
-    rev = "1c6e20d41d6a9c1d737945962160e8571df55daa";
-    hash = "sha256-GIMyMt1pkkoXdCq9un859bX6YQZ/iYtukb9R5luazLM=";
-  };
-  system = pkgs.stdenv.hostPlatform.system;
-in
-let
-  pkgs = import nixpkgs-source { inherit system; };
-in
-pkgs.stdenv.mkDerivation rec {
+stdenv.mkDerivation rec {
   pname = "MRVN-Radiant";
   version = "0.1.9";
 
-  src = pkgs.fetchgit {
-    url = "https://github.com/${pname}/${pname}.git";
-    rev = "cdd17d8a6966162fa5e326706ad4e9a3d7964fac";
-    sha256 = "sha256-bzSOE/ueOftQerXS05MI9/1bxhOdWi3I1yGleCjM4hw=";
+  src = fetchgit {
+    url = "https://github.com/RoyalBlue1/${pname}.git";
+    rev = "0e0a7d7138f0e66823d967bbff750a3c4aee3649";
+    sha256 = "sha256-mvlAR31zHRZAC6FipDu41Adv73t18zCGLF4+vv/CdvA=";
   };
 
-  # nativeBuildInputs = with pkgs; [
-  #   cmake
-  #   copyDesktopItems
-  #   pkg-config
-  #   patchelf
-  #   keepBuildTree # HACK
-  #   libsForQt5.wrapQtAppsHook
-  # ];
-
-  # buildInputs = with pkgs; [
-  #   libsForQt5.qt5.qtbase
-  #   glib
-  #   libxml2
-  #   zlib
-  #   libpng
-  #   libjpeg
-  #   libxcb
-  #   libGL
-  #   wayland
-  # ];
-
-  nativeBuildInputs = with pkgs; [
+  nativeBuildInputs = [
     copyDesktopItems
     cmake
     pkg-config
-    keepBuildTree # HACK: otherwise nix will complain about rpath linking to /build/
-    libsForQt5.wrapQtAppsHook
+    keepBuildTree # HACK: otherwise nix will complain about rpath linking to /build/ # TODO: fix this
+    makeWrapper
   ];
 
-  buildInputs = with pkgs; [
+  buildInputs = [
     pcre
     libsysprof-capture
 
-    qt5.qtbase
+    qt6.qtbase.dev
+
+    libGL
+    mesa
+
+    wayland
 
     glib
     libxml2
@@ -66,17 +65,17 @@ pkgs.stdenv.mkDerivation rec {
     libpng
     libjpeg
 
-    wayland
-
     libxkbcommon
 
-    xorg.libX11
-    xorg.libXext
-    xorg.libXrender
-    xorg.libXi
-    xorg.libXcursor
-    xorg.libxcb
+    libx11
+    libxext
+    libxrender
+    libxi
+    libxcursor
+    libxcb
   ];
+
+  dontWrapQtApps = true;
 
   NIX_CFLAGS_COMPILE = [
     "-Wno-error=format-security"
@@ -86,6 +85,7 @@ pkgs.stdenv.mkDerivation rec {
     mkdir -p $out/bin
     cp -r install/* $out/bin
   '';
+
   postInstall = ''
     mkdir -p $out/bin
     cp -r ../install/* $out/bin
@@ -104,18 +104,25 @@ pkgs.stdenv.mkDerivation rec {
     "-DBUILD_PLUGINS=ON"
   ];
 
+  postFixup = ''
+    wrapProgram $out/bin/radiant \
+      --set QT_QPA_PLATFORM_PLUGIN_PATH \
+      "${qt6.qtbase}/lib/qt-${qt6.qtbase.version}/plugins/platforms"
+  '';
+
   desktopItems = [
-    (pkgs.makeDesktopItem {
+    (makeDesktopItem {
       desktopName = pname;
       name = pname;
       exec = meta.mainProgram;
-      icon = "${src}/icons/radiant-src.png";
+      icon = "${src}/icons/radiant.ico";
       type = "Application";
       comment = meta.description;
       terminal = false;
       categories = [ "Development" ];
       keywords = [
         "3D"
+        "Radiant"
       ];
     })
   ];
