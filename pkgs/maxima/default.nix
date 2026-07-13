@@ -18,6 +18,7 @@
   libGL,
   autoPatchelfHook,
   makeWrapper,
+  makeDesktopItem,
   toolchain ? pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml,
   python314,
   umu-launcher,
@@ -90,6 +91,35 @@
     ln -s ${./Cargo.lock} Cargo.lock
     export PROTOC=${lib.getExe' protobuf "protoc"} 
   '';
+
+  desktopItems = [
+    (makeDesktopItem {
+      desktopName = finalAttrs.pname;
+      name = finalAttrs.pname;
+      exec = finalAttrs.meta.mainProgram;
+      icon = "${finalAttrs.src}/maxima-resources/assets/logo.ico";
+      type = "Application";
+      comment = finalAttrs.meta.description;
+      terminal = false;
+      categories = [ "Application" ];
+      keywords = [
+      ];
+    })
+    (makeDesktopItem {
+      desktopName = "maxima-qrc";
+      name = "Maxima Launcher";
+      exec = "maxima-bootstrap";
+      icon = "${finalAttrs.src}/maxima-resources/assets/logo.ico";
+      type = "Application";
+      comment = finalAttrs.meta.description;
+      terminal = false;
+      categories = [ "Application" ];
+      keywords = [
+      ];
+      noDisplay = true;
+      mimeTypes = [ "x-scheme-handler/qrc" ];
+    })
+  ];
 
   postInstall = ''
     wrapProgram $out/bin/maxima --prefix LD_LIBRARY_PATH : ${finalAttrs.LD_LIBRARY_PATH} --prefix PATH : ${
