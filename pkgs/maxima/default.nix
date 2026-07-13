@@ -1,72 +1,34 @@
 {
+  maxima-unwrapped,
   lib,
-  rustPlatform,
-  fetchFromGitHub,
-  protobuf,
-  pkgsBuildHost,
-  libxkbcommon,
-  vulkan-loader,
-  libx11,
-  libxcursor,
-  libxrandr,
-  xinput,
-  wayland,
-  pkg-config,
+  symlinkJoin,
+  makeBinaryWrapper,
+  makeDesktopItem,
+  copyDesktopItems,
+  python314,
+  umu-launcher,
+  
   expat,
   fontconfig,
   freetype,
   libGL,
-  autoPatchelfHook,
-  makeWrapper,
-  makeDesktopItem,
-  toolchain ? pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml,
-  python314,
-  umu-launcher,
+  libx11,
+  libxcursor,
+  xinput,
+  libxrandr,
+  wayland,
+  libxkbcommon,
+  vulkan-loader,
 }:
-(rustPlatform.buildRustPackage.override { rustc = toolchain; }) (finalAttrs: {
-  pname = "Maxima";
+symlinkJoin (finalAttrs: {
+  pname = "maxima";
   version = "0.0.0";
 
-  src = fetchFromGitHub {
-    owner = "catornot";
-    repo = finalAttrs.pname;
-    rev = "ecf7860c838f9049f16b20fd4577e1c85a2b9604";
-    hash = "sha256-giTGRsL9QiN1Yn/x6ZWTXjJ1lM7So9V0+hk/AUw+XM8=";
-  };
-
-  cargoLock = {
-    lockFile = ./Cargo.lock;
-    outputHashes = {
-      "async-compression-0.4.5" = "sha256-6PRxfc//AsTJ8MMN3bql3kaNs+jLS7rkmRVJj1Tke0M=";
-      "flate2-1.0.28" = "sha256-j6T/3yNxefDFi6yyPVi0D0hcvRsLz7EJ/Nypf4WRFvA=";
-    };
-  };
+  paths = [ maxima-unwrapped ];
 
   nativeBuildInputs = [
-    toolchain
-    autoPatchelfHook
-    makeWrapper
-  ];
-
-  buildInputs = [
-    protobuf
-    pkg-config
-    expat
-    fontconfig
-    freetype
-    freetype.dev
-    libGL
-    libx11
-    libxcursor
-    xinput
-    libxrandr
-    wayland
-    libxkbcommon
-  ];
-
-  checkFlags = [
-    # doesn't work on linux maybe?? nah probably needs network access
-    "--skip=cloudsync"
+    makeBinaryWrapper
+    copyDesktopItems
   ];
 
   runtimeDependencies = [
@@ -81,23 +43,19 @@
     libxrandr
     wayland
     libxkbcommon
+    vulkan-loader
   ];
 
   LD_LIBRARY_PATH = builtins.foldl' (
     a: b: "${a}:${b}/lib"
   ) "${vulkan-loader}/lib" finalAttrs.runtimeDependencies;
 
-  postPatch = ''
-    ln -s ${./Cargo.lock} Cargo.lock
-    export PROTOC=${lib.getExe' protobuf "protoc"} 
-  '';
-
   desktopItems = [
     (makeDesktopItem {
       desktopName = finalAttrs.pname;
       name = finalAttrs.pname;
       exec = finalAttrs.meta.mainProgram;
-      icon = "${finalAttrs.src}/maxima-resources/assets/logo.ico";
+      icon = "${maxima-unwrapped.src}/maxima-resources/assets/logo.ico";
       type = "Application";
       comment = finalAttrs.meta.description;
       terminal = false;
@@ -107,9 +65,9 @@
     })
     (makeDesktopItem {
       desktopName = "maxima-qrc";
-      name = "Maxima Launcher";
+      name = "maxima-qrc";
       exec = "maxima-bootstrap";
-      icon = "${finalAttrs.src}/maxima-resources/assets/logo.ico";
+      icon = "${maxima-unwrapped.src}/maxima-resources/assets/logo.ico";
       type = "Application";
       comment = finalAttrs.meta.description;
       terminal = false;
@@ -121,7 +79,17 @@
     })
   ];
 
-  postInstall = ''
+  postBuild = ''
+    copyDesktopItems
+    
+    rm $out/bin/maxima
+    cp ${maxima-unwrapped}/bin/maxima $out/bin/maxima
+    chmod +w $out/bin/maxima
+
+    rm $out/bin/maxima-cli
+    cp ${maxima-unwrapped}/bin/maxima-cli $out/bin/maxima-cli
+    chmod +w $out/bin/maxima-cli
+    
     wrapProgram $out/bin/maxima --prefix LD_LIBRARY_PATH : ${finalAttrs.LD_LIBRARY_PATH} --prefix PATH : ${
       lib.makeBinPath [
         umu-launcher
@@ -136,12 +104,5 @@
     } --prefix MAXIMA_WINE_COMMAND : umu-run --prefix MAXIMA_PACKAGED : 1
   '';
 
-  meta = {
-    description = "A free and open-source replacement for the EA Desktop Launcher for Linux and Windows.";
-    homepage = "https://github.com/ArmchairDevelopers/Maxima";
-    license = with lib.licenses; [
-      gpl3
-    ];
-    mainProgram = "maxima";
-  };
+  meta = maxima-unwrapped.meta;
 })
