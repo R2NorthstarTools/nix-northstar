@@ -33,5 +33,8 @@
       formatter = eachSystem (pkgs: pkgs.nixfmt-tree);
 
       packages = eachSystem (pkgs: pkgs.callPackage ./pkgs { inherit inputs; });
+    }
+    // {
+      nixosModules.maxima-service = import ./modules/maxima-service { inherit self; };
     };
 }
