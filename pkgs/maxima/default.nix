@@ -7,7 +7,7 @@
   copyDesktopItems,
   python314,
   umu-launcher,
-  
+
   expat,
   fontconfig,
   freetype,
@@ -81,7 +81,7 @@ symlinkJoin (finalAttrs: {
 
   postBuild = ''
     copyDesktopItems
-    
+
     rm $out/bin/maxima
     cp ${maxima-unwrapped}/bin/maxima $out/bin/maxima
     chmod +w $out/bin/maxima
@@ -89,7 +89,7 @@ symlinkJoin (finalAttrs: {
     rm $out/bin/maxima-cli
     cp ${maxima-unwrapped}/bin/maxima-cli $out/bin/maxima-cli
     chmod +w $out/bin/maxima-cli
-    
+
     wrapProgram $out/bin/maxima --prefix LD_LIBRARY_PATH : ${finalAttrs.LD_LIBRARY_PATH} --prefix PATH : ${
       lib.makeBinPath [
         umu-launcher

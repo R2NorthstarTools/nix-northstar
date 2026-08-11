@@ -18,21 +18,30 @@
   libGL,
   autoPatchelfHook,
   makeWrapper,
-  makeDesktopItem,
+  fetchurl,
   toolchain ? pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml,
-  python314,
-  umu-launcher,
 }:
 (rustPlatform.buildRustPackage.override { rustc = toolchain; }) (finalAttrs: {
   pname = "maxima-unwrapped";
   version = "0.0.0";
 
   src = fetchFromGitHub {
-    owner = "catornot";
-    repo = finalAttrs.pname;
-    rev = "ecf7860c838f9049f16b20fd4577e1c85a2b9604";
-    hash = "sha256-giTGRsL9QiN1Yn/x6ZWTXjJ1lM7So9V0+hk/AUw+XM8=";
+    owner = "ArmchairDevelopers";
+    repo = "Maxima";
+    rev = "7af308fc5324e2f41b322732d1963e8fea77f644";
+    hash = "sha256-lrs8MY3I5qSxd0KvUkXgPRshmvD5oyUDgUoI6q2jrXU=";
   };
+
+  patches = [
+    (fetchurl {
+      url = "https://github.com/ArmchairDevelopers/Maxima/commit/e96220ea0bde3798173c4266efd52640e47446f9.patch";
+      sha256 = "034p40akqbvxb6ch65hd89gdlz3dd324agd4vggywh9qqjhi29yl";
+    })
+    (fetchurl {
+      url = "https://github.com/ArmchairDevelopers/Maxima/commit/ecf7860c838f9049f16b20fd4577e1c85a2b9604.patch";
+      sha256 = "1a599fvwk4x75ny76yzmas0ykskqsibajxy4b84g9cizkrxpab3m";
+    })
+  ];
 
   cargoLock = {
     lockFile = ./Cargo.lock;
