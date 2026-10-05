@@ -17,18 +17,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    systemd.user.sockets.maxima-service = {
-      description = "Socket for maxima service activation";
-      partOf = [ "maxima-service.service" ];
-      wantedBy = [ "sockets.target" ];
-
-      socketConfig = {
-        ListenStream = 3216;
-        NoDelay = true;
-        Backlog = 200;
-      };
-    };
-
     systemd.user.services.maxima-service = {
       description = "Maxima lsx service";
       wantedBy = [ "multi-user.target" ];
